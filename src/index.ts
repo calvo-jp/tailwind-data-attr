@@ -1,11 +1,11 @@
 import plugin from 'tailwindcss/plugin.js';
 
-interface VariantEntry {
+export interface StaticVariantEntry {
 	key: string;
 	values: (string | null)[];
 }
 
-const VARIANT_ENTRIES: VariantEntry[] = [
+const STATIC_VARIANT_ENTRIES: StaticVariantEntry[] = [
 	{key: 'hover', values: [null]},
 	{key: 'focus', values: [null]},
 	{key: 'focus-visible', values: [null]},
@@ -94,26 +94,26 @@ const VARIANT_ENTRIES: VariantEntry[] = [
 	{key: 'scroll-lock', values: [null]},
 	{key: 'inert', values: [null]},
 	{key: 'loading', values: [null]},
+	{key: 'discover', values: [null]},
+	{key: 'hidden', values: [null]},
 ];
 
-interface MatchVariantEntry {
+export interface DynamicVariantEntry {
 	key: string;
 	validate?(subject: string): boolean;
 	knownValues?: Record<string, string>;
 }
 
-const DEFAULT_MATCH_VARIANT_ENTRY_KNOWN_INT_VALUES = Array.from<never>({
+const DEFAULT_DYNAMIC_VARIANT_ENTRY_KNOWN_INT_VALUES = Array.from<never>({
 	length: 10,
 }).reduce<Record<string, string>>((o, _v, i) => {
 	o[i] = i.toString();
 	return o;
 }, {});
 
-function isInt(subject: string) {
-	return !Number.isNaN(Number.parseInt(subject));
-}
+const isInt = (subject: string) => !Number.isNaN(Number.parseInt(subject));
 
-const MATCH_VARIANT_ENTRIES: MatchVariantEntry[] = [
+const DYNAMIC_VARIANT_ENTRIES: DynamicVariantEntry[] = [
 	{key: 'scope'},
 	{key: 'part'},
 	{key: 'value'},
@@ -121,23 +121,23 @@ const MATCH_VARIANT_ENTRIES: MatchVariantEntry[] = [
 	{
 		key: 'index',
 		validate: isInt,
-		knownValues: DEFAULT_MATCH_VARIANT_ENTRY_KNOWN_INT_VALUES,
+		knownValues: DEFAULT_DYNAMIC_VARIANT_ENTRY_KNOWN_INT_VALUES,
 	},
 	{
 		key: 'columns',
 		validate: isInt,
-		knownValues: DEFAULT_MATCH_VARIANT_ENTRY_KNOWN_INT_VALUES,
+		knownValues: DEFAULT_DYNAMIC_VARIANT_ENTRY_KNOWN_INT_VALUES,
 	},
 	{key: 'branch'},
 	{
 		key: 'depth',
 		validate: isInt,
-		knownValues: DEFAULT_MATCH_VARIANT_ENTRY_KNOWN_INT_VALUES,
+		knownValues: DEFAULT_DYNAMIC_VARIANT_ENTRY_KNOWN_INT_VALUES,
 	},
 	{
 		key: 'path',
 		validate: isInt,
-		knownValues: DEFAULT_MATCH_VARIANT_ENTRY_KNOWN_INT_VALUES,
+		knownValues: DEFAULT_DYNAMIC_VARIANT_ENTRY_KNOWN_INT_VALUES,
 	},
 	{
 		key: 'type',
@@ -146,6 +146,7 @@ const MATCH_VARIANT_ENTRIES: MatchVariantEntry[] = [
 			info: 'info',
 			error: 'error',
 			success: 'success',
+			warning: 'warning',
 			loading: 'loading',
 			/* tour */
 			floating: 'floating',
@@ -156,7 +157,7 @@ const MATCH_VARIANT_ENTRIES: MatchVariantEntry[] = [
 	},
 ];
 
-interface Options {
+export interface DataAttrPluginOptions {
 	/**
 	 * @description The prefix for the variants.
 	 * @default "ui"
@@ -171,13 +172,13 @@ interface Options {
 }
 
 /**
- * @see https://github.com/calvo-jp/tailwindcss-plugin-zag
+ * @see https://github.com/calvo-jp/tailwind-data-attr
  */
-export default plugin.withOptions<Options>((config = {}) => {
+export default plugin.withOptions<DataAttrPluginOptions>((config = {}) => {
 	const prefix = config.prefix ?? 'ui';
 
 	return ({addVariant, matchVariant}) => {
-		for (const {key, values} of VARIANT_ENTRIES) {
+		for (const {key, values} of STATIC_VARIANT_ENTRIES) {
 			addVariant(
 				`${prefix}-${key}`,
 				values.map((value) => (value === null ? `&[data-${key}]` : `&[data-${value}]`)),
@@ -203,7 +204,7 @@ export default plugin.withOptions<Options>((config = {}) => {
 			);
 		}
 
-		for (const {key, knownValues, validate} of MATCH_VARIANT_ENTRIES) {
+		for (const {key, knownValues, validate} of DYNAMIC_VARIANT_ENTRIES) {
 			const isValid = validate ?? (() => true);
 
 			matchVariant(
